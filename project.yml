@@ -1,0 +1,57 @@
+# XcodeGen project description.
+#
+# The .xcodeproj is deliberately not checked in: project.pbxproj is a large, UUID-heavy file
+# that is easy to corrupt by hand and impossible to validate without Xcode. XcodeGen derives it
+# from this 30-line description instead, both on a Mac and on the CI runner.
+#
+#   brew install xcodegen && xcodegen generate
+#
+name: DaysEngine
+
+options:
+  bundleIdPrefix: org.daysengine
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    # The launcher ships no third-party binaries, so bitcode is irrelevant and off.
+    ENABLE_BITCODE: NO
+
+targets:
+  DaysEngine:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: DaysEngine
+        excludes:
+          - "Info.plist"
+      # The launcher web page is copied in verbatim; it is the same self-contained file the
+      # Safari build uses, so there is exactly one copy of the launcher logic to maintain.
+      - path: www
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.daysengine.launcher
+        PRODUCT_NAME: DaysEngine
+        INFOPLIST_FILE: DaysEngine/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        CODE_SIGN_STYLE: Automatic
+        # Overridden to NO in CI so an unsigned IPA can be produced without any Apple account.
+        CODE_SIGNING_ALLOWED: YES
+    # NOTE: no `info:` block on purpose. XcodeGen would *generate* an Info.plist, and the
+    # hand-written DaysEngine/Info.plist (file sharing, orientations, audio-facing keys) is the
+    # one that must ship. It is referenced through INFOPLIST_FILE above and excluded from the
+    # compiled sources so it is never treated as a source file.
+    scheme:
+      testTargets: []
+      gatherCoverageData: false

@@ -1,0 +1,2098 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DaysEngine">
+<meta name="theme-color" content="#0f0f1a">
+<title>DaysEngine 启动器 — 网页版</title>
+<style>
+  :root {
+    --back:#0f0f1a; --surface:#1a1a2e; --surface-alt:#16213e; --card:#1e1e33;
+    --line:#2c2c45; --accent:#ff6b8a; --accent-dim:#ff8fa3;
+    --text:#e0e0e0; --text-dim:#8a92a6; --ok:#6be0a8; --warn:#ffc46b;
+    --safe-top:env(safe-area-inset-top, 0px); --safe-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; height:100%; background:var(--back); color:var(--text);
+    font-family:-apple-system,"PingFang SC","Helvetica Neue",system-ui,sans-serif; }
+  body { display:flex; flex-direction:column; min-height:100vh; }
+  button, input, select { font-family:inherit; font-size:15px; }
+  h1,h2,h3 { margin:0; }
+
+  header { position:sticky; top:0; z-index:20;
+    padding:calc(10px + var(--safe-top)) 16px 10px;
+    background:linear-gradient(135deg,#1a1a2e,#16213e);
+    border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:baseline; gap:8px; }
+  .brand strong { font-size:22px; color:#fff; letter-spacing:.5px; }
+  .brand span { font-size:11.5px; color:var(--accent-dim); }
+  nav { display:flex; gap:8px; margin-top:10px; }
+  nav button { flex:1; padding:9px 0; border-radius:9px; border:1px solid var(--line);
+    background:transparent; color:var(--text); font-size:14px; }
+  nav button.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+
+  main { flex:1; padding:16px; padding-bottom:calc(16px + var(--safe-bottom)); }
+  .view { display:none; } .view.active { display:block; }
+  .view h2 { font-size:17px; margin-bottom:4px; }
+  .view .hint { font-size:12.5px; color:var(--text-dim); margin-bottom:14px; line-height:1.6; }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:14px; margin-bottom:12px; }
+  .card.selected { border-color:var(--accent); background:var(--surface-alt); }
+  .card h3 { font-size:15.5px; color:#fff; margin-bottom:6px; }
+  .card .path { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+    color:var(--text-dim); word-break:break-all; margin-bottom:4px; }
+  .card .meta { font-size:11.5px; color:var(--text-dim); line-height:1.7; }
+  .card .actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+  button.primary { background:var(--accent); border:1px solid var(--accent); color:#fff;
+    padding:10px 16px; border-radius:9px; font-weight:600; }
+  button.secondary { background:#242e47; border:1px solid var(--line); color:var(--text);
+    padding:10px 14px; border-radius:9px; }
+  button:disabled { opacity:.45; }
+  button.wide { width:100%; margin-bottom:8px; }
+
+  pre.diag { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px;
+    background:#0c0c16; border:1px solid var(--line); border-radius:10px; padding:12px;
+    white-space:pre-wrap; word-break:break-word; color:#c8d0e0; margin:0; }
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .field input[type=text] { width:100%; padding:10px; border-radius:9px; border:1px solid var(--line);
+    background:#12121f; color:var(--text); font-family:ui-monospace,monospace; font-size:13px; }
+  .field input[type=range] { width:100%; accent-color:var(--accent); }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .toggle { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:14px; }
+  .toggle input { width:20px; height:20px; accent-color:var(--accent); }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px;
+    border:1px solid var(--line); color:var(--text-dim); }
+  .pill.ok { color:var(--ok); border-color:var(--ok); }
+  .pill.warn { color:var(--warn); border-color:var(--warn); }
+
+  footer { position:sticky; bottom:0; z-index:20; padding:8px 16px calc(8px + var(--safe-bottom));
+    background:#12121f; border-top:1px solid var(--line);
+    font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><strong>DaysEngine</strong><span>网页版 ｜ School Days HQ / Shiny Days / Cross Days</span></div>
+  <nav>
+    <button id="tab-library" class="active" type="button">游戏库</button>
+    <button id="tab-detail" type="button">详情</button>
+    <button id="tab-settings" type="button">设置</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ------------------------------------------------------------ library -->
+  <section id="view-library" class="view active">
+    <h2>游戏库</h2>
+    <div class="hint">
+      选择游戏 <code>Packs</code> 里的 <b>.GPK</b> 文件即可识别归档。<br>
+      音频直接从归档解码，<b>不附带也不下载任何游戏资源</b>。
+    </div>
+
+    <!-- Read-only inputs are used deliberately: iOS Safari keeps the native picker behaviour
+         (including "从「文件」App 选择") while an ordinary button drives them. -->
+    <input id="file-gpk" class="hidden" type="file" accept=".gpk,.GPK,application/octet-stream" multiple>
+    <input id="file-folder" class="hidden" type="file" webkitdirectory directory multiple>
+    <input id="file-key" class="hidden" type="file" accept=".json,application/json">
+    <input id="file-exe" class="hidden" type="file" accept=".exe,application/octet-stream">
+
+    <button id="btn-gpk" class="primary wide" type="button">选择 .GPK 文件</button>
+    <button id="btn-folder" class="secondary wide" type="button">选择整个 Packs 文件夹（桌面浏览器）</button>
+    <button id="btn-clear" class="secondary wide" type="button">清空已载入的归档</button>
+
+    <div id="library-list" style="margin-top:14px;"></div>
+  </section>
+
+  <!-- ------------------------------------------------------------ detail -->
+  <section id="view-detail" class="view">
+    <h2>详情</h2>
+    <div class="hint">当前已载入的归档与音频状态。</div>
+    <div class="card">
+      <h3>引擎</h3>
+      <div id="engine-diag" class="meta"></div>
+    </div>
+    <div class="card">
+      <h3>音频</h3>
+      <div id="audio-diag" class="meta"></div>
+    </div>
+    <div class="card">
+      <h3>归档清单</h3>
+      <pre id="archive-diag" class="diag"></pre>
+    </div>
+    <div class="card">
+      <h3>问题</h3>
+      <pre id="error-diag" class="diag"></pre>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ settings -->
+  <section id="view-settings" class="view">
+    <h2>设置</h2>
+    <div class="hint">音量与密钥会保存在这台设备上，下次打开自动生效。</div>
+
+    <div class="card">
+      <h3>声音</h3>
+      <div class="toggle"><input id="toggle-audio" type="checkbox"><label for="toggle-audio">启用启动器声音</label></div>
+      <div class="toggle"><input id="toggle-music" type="checkbox"><label for="toggle-music">播放背景音乐</label></div>
+      <div class="field">
+        <label>主音量 <span id="label-master"></span></label>
+        <input id="range-master" type="range" min="0" max="1" step="0.01">
+      </div>
+      <div class="field">
+        <label>背景音乐音量 <span id="label-music"></span></label>
+        <input id="range-music" type="range" min="0" max="1" step="0.01">
+      </div>
+      <div class="field">
+        <label>界面音效音量 <span id="label-effects"></span></label>
+        <input id="range-effects" type="range" min="0" max="1" step="0.01">
+      </div>
+      <button id="btn-start-music" class="primary wide" type="button">开始播放背景音乐</button>
+      <button id="btn-stop-music" class="secondary wide" type="button">停止背景音乐</button>
+      <button id="btn-test-cue" class="secondary wide" type="button">试听界面音效</button>
+    </div>
+
+    <div class="card">
+      <h3>归档密钥</h3>
+      <div class="hint" style="margin-bottom:10px;">
+        密钥来自你自己的游戏主程序。在电脑上运行
+        <code>DaysLauncher.exe --gpkkey "游戏目录"</code> 会生成一个小 JSON，
+        传到这台设备后用下面第一个按钮选它即可（只需一次）。
+      </div>
+      <div id="key-state" class="meta" style="margin-bottom:10px;"></div>
+      <button id="btn-load-key" class="primary wide" type="button">选择密钥文件（daysengine-key.json）</button>
+      <button id="btn-load-exe" class="secondary wide" type="button">选择游戏主程序（.exe）</button>
+      <div class="field">
+        <label>或手动输入 32 位十六进制密钥</label>
+        <input id="input-key" type="text" inputmode="latin" autocomplete="off" spellcheck="false" placeholder="例如 82ee1db357e92cc22f547b104c9a7549">
+      </div>
+      <button id="btn-apply-key" class="secondary wide" type="button">应用手动输入的密钥</button>
+    </div>
+
+    <div class="card">
+      <h3>关于与许可</h3>
+      <div class="meta">
+        形态参照官方「DaysEngine for Android」发布说明（游戏库 + 目录识别 + 播放器入口），
+        数据格式依据 superboo07/DaysEngine 的 days-gpk / days-script / days-save 规范。<br><br>
+        • 不附带、不分发任何游戏本体、影片、音乐或语音资源；音频运行时从你自备的
+        <code>BGM.GPK</code> / <code>SysSe.GPK</code> 解码，只存在于内存中。<br>
+        • 音频使用 Safari 内置的 Web Audio 解码，不需要 FFmpeg。<br>
+        • School Days / Shiny Days / Cross Days 为各自权利人商标，本项目与其无关。
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="status">正在初始化…</footer>
+
+<script>/* DaysEngine Web — portable core.
+ *
+ * A dependency-free JavaScript port of the verified C# core in days_launcher/src:
+ * GPK archive reading, .ORS timeline parsing and the decompression both need.
+ *
+ * Deliberately uses no modern platform API that a browser might not have:
+ *   - inflate is implemented here (RFC 1950 zlib / RFC 1951 raw deflate), so the code does
+ *     not depend on DecompressionStream, which older Safari lacks;
+ *   - only DataView / Uint8Array / TextDecoder are used otherwise.
+ *
+ * Every value this file produces is checked in test/test.html against vectors.json, which the
+ * C# oracle generated from retail game data (see tools/VectorGen.cs).
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  root.DaysEngine = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var DE = {};
+
+  // ==================================================================== inflate
+
+  DE.INFLATE_ERROR = 'inflate: ';
+
+  /**
+   * Pulls bits out of a byte array, LSB-first as DEFLATE requires.
+   *
+   * Two readers are kept. `bits` reads complete codes and tracks a running error; `peek`
+   * is the fast path used by the Huffman decoders, which look ahead in a 32-bit register
+   * and only then commit. Keeping them separate means neither has to compromise.
+   */
+  function BitReader(data, pos) {
+    this.d = data;
+    this.p = pos || 0;
+    this.acc = 0;
+    this.n = 0;
+    this.err = false;
+  }
+
+  BitReader.prototype.peek = function (want) {
+    while (this.n < want) {
+      if (this.p >= this.d.length) { this.err = true; return this.acc; }
+      this.acc |= this.d[this.p++] << this.n;
+      this.n += 8;
+      if (this.n > 24) break;
+    }
+    return this.acc;
+  };
+
+  BitReader.prototype.drop = function (count) {
+    this.acc >>>= count;
+    this.n -= count;
+  };
+
+  BitReader.prototype.bits = function (count) {
+    var v = this.peek(count) & ((1 << count) - 1);
+    this.drop(count);
+    return v;
+  };
+
+  BitReader.prototype.align = function () {
+    var drop = this.n & 7;
+    this.acc >>>= drop;
+    this.n -= drop;
+  };
+
+  /**
+   * Canonical Huffman decoder.
+   *
+   * A power-of-two `fastBits` lookup table answers the overwhelmingly common short codes in
+   * one step; anything longer falls back to walking the length tables in the classic
+   * DEFLATE way. Both paths agree on every input.
+   */
+  function Huffman(lengths, fastBits) {
+    this.counts = new Int32Array(16);
+    this.symbols = new Int32Array(lengths.length);
+    var i;
+    for (i = 0; i < lengths.length; i++) this.counts[lengths[i]]++;
+    this.counts[0] = 0;
+
+    var offs = new Int32Array(16);
+    var total = 0;
+    for (i = 1; i < 16; i++) { offs[i] = total; total += this.counts[i]; }
+    for (i = 0; i < lengths.length; i++) {
+      if (lengths[i] !== 0) this.symbols[offs[lengths[i]]++] = i;
+    }
+
+    this.fastBits = fastBits || 0;
+    this.fast = null;
+    if (this.fastBits > 0) {
+      var size = 1 << this.fastBits;
+      this.fast = new Int32Array(size);
+      var code = 0, si = 0;
+      for (var len = 1; len <= this.fastBits; len++) {
+        for (var k = 0; k < this.counts[len]; k++) {
+          var sym = this.symbols[si++];
+          var rev = reverseBits(code, len);
+          var step = 1 << len;
+          for (var idx = rev; idx < size; idx += step) {
+            this.fast[idx] = sym | (len << 16);
+          }
+          code++;
+        }
+        code <<= 1;
+      }
+    }
+  }
+
+  function reverseBits(code, len) {
+    var r = 0;
+    for (var i = 0; i < len; i++) { r = (r << 1) | (code & 1); code >>>= 1; }
+    return r;
+  }
+
+  Huffman.prototype.decode = function (reader) {
+    if (this.fast) {
+      var idx = reader.peek(this.fastBits) & (this.fast.length - 1);
+      var packed = this.fast[idx];
+      if (packed !== 0) {
+        reader.drop(packed >>> 16);
+        return packed & 0xFFFF;
+      }
+    }
+    return this.decodeSlow(reader);
+  };
+
+  Huffman.prototype.decodeSlow = function (reader) {
+    var code = 0, first = 0, index = 0;
+    for (var len = 1; len <= 15; len++) {
+      code |= reader.bits(1);
+      if (reader.err) return -1;
+      var count = this.counts[len];
+      if (code - first < count) return this.symbols[index + (code - first)];
+      index += count;
+      first = (first + count) << 1;
+      code <<= 1;
+    }
+    return -1;
+  };
+
+  var LENGTH_BASE = new Int32Array([
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
+    35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258]);
+  var LENGTH_EXTRA = new Int32Array([
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+    3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0]);
+  var DIST_BASE = new Int32Array([
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
+    257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577]);
+  var DIST_EXTRA = new Int32Array([
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
+    7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13]);
+  var CLEN_ORDER = new Int32Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+
+  var FIXED_LIT = null;
+  var FIXED_DIST = null;
+
+  function fixedTables() {
+    if (!FIXED_LIT) {
+      var lit = new Uint8Array(288);
+      var i;
+      for (i = 0; i < 144; i++) lit[i] = 8;
+      for (; i < 256; i++) lit[i] = 9;
+      for (; i < 280; i++) lit[i] = 7;
+      for (; i < 288; i++) lit[i] = 8;
+      FIXED_LIT = new Huffman(lit, 9);
+      var dist = new Uint8Array(30);
+      for (i = 0; i < 30; i++) dist[i] = 5;
+      FIXED_DIST = new Huffman(dist, 5);
+    }
+  }
+
+  function readDynamicTables(reader) {
+    var hlit = reader.bits(5) + 257;
+    var hdist = reader.bits(5) + 1;
+    var hclen = reader.bits(4) + 4;
+    if (reader.err) throw new Error(DE.INFLATE_ERROR + 'truncated dynamic header');
+
+    var clen = new Uint8Array(19);
+    for (var i = 0; i < hclen; i++) clen[CLEN_ORDER[i]] = reader.bits(3);
+    var clenHuff = new Huffman(clen, 7);
+
+    var lengths = new Uint8Array(hlit + hdist);
+    var n = 0;
+    while (n < lengths.length) {
+      var sym = clenHuff.decode(reader);
+      if (sym < 0) throw new Error(DE.INFLATE_ERROR + 'bad code-length symbol');
+      if (sym < 16) {
+        lengths[n++] = sym;
+        continue;
+      }
+      var repeat, value = 0;
+      if (sym === 16) {
+        if (n === 0) throw new Error(DE.INFLATE_ERROR + 'repeat with no previous length');
+        value = lengths[n - 1];
+        repeat = 3 + reader.bits(2);
+      } else if (sym === 17) {
+        repeat = 3 + reader.bits(3);
+      } else {
+        repeat = 11 + reader.bits(7);
+      }
+      while (repeat-- > 0 && n < lengths.length) lengths[n++] = value;
+    }
+    if (reader.err) throw new Error(DE.INFLATE_ERROR + 'truncated code lengths');
+
+    var lit = new Uint8Array(hlit);
+    var dist = new Uint8Array(hdist);
+    for (var j = 0; j < hlit; j++) lit[j] = lengths[j];
+    for (var k = 0; k < hdist; k++) dist[k] = lengths[hlit + k];
+    return { lit: new Huffman(lit, 9), dist: new Huffman(dist, 6) };
+  }
+
+  function inflateRaw(data, start, end) {
+    if (end === undefined || end > data.length) end = data.length;
+    var reader = new BitReader(data, start || 0);
+    var out = new Uint8Array(65536);
+    var len = 0;
+
+    function ensure(extra) {
+      if (len + extra <= out.length) return;
+      var want = out.length;
+      while (want < len + extra) want *= 2;
+      var grown = new Uint8Array(want);
+      grown.set(out.subarray(0, len));
+      out = grown;
+    }
+
+    for (;;) {
+      var final = reader.bits(1);
+      var type = reader.bits(2);
+      if (reader.err) throw new Error(DE.INFLATE_ERROR + 'truncated block header');
+
+      if (type === 0) {
+        reader.align();
+        var b0 = reader.bits(8), b1 = reader.bits(8), b2 = reader.bits(8), b3 = reader.bits(8);
+        var blockLen = b0 | (b1 << 8);
+        var nlen = b2 | (b3 << 8);
+        if ((blockLen ^ 0xFFFF) !== nlen) throw new Error(DE.INFLATE_ERROR + 'stored block length mismatch');
+        ensure(blockLen);
+        for (var i = 0; i < blockLen; i++) out[len++] = reader.bits(8);
+        if (reader.err) throw new Error(DE.INFLATE_ERROR + 'truncated stored block');
+      } else if (type === 1 || type === 2) {
+        var tables;
+        if (type === 1) {
+          fixedTables();
+          tables = { lit: FIXED_LIT, dist: FIXED_DIST };
+        } else {
+          tables = readDynamicTables(reader);
+        }
+
+        for (;;) {
+          var sym = tables.lit.decode(reader);
+          if (sym < 0) throw new Error(DE.INFLATE_ERROR + 'bad literal/length symbol');
+          if (sym < 256) {
+            ensure(1);
+            out[len++] = sym;
+            continue;
+          }
+          if (sym === 256) break;
+
+          var li = sym - 257;
+          if (li >= LENGTH_BASE.length) throw new Error(DE.INFLATE_ERROR + 'length symbol out of range');
+          var copyLen = LENGTH_BASE[li] + reader.bits(LENGTH_EXTRA[li]);
+
+          var dsym = tables.dist.decode(reader);
+          if (dsym < 0 || dsym >= DIST_BASE.length) throw new Error(DE.INFLATE_ERROR + 'bad distance symbol');
+          var dist = DIST_BASE[dsym] + reader.bits(DIST_EXTRA[dsym]);
+          if (dist > len) throw new Error(DE.INFLATE_ERROR + 'distance ' + dist + ' exceeds output ' + len);
+
+          ensure(copyLen);
+          var from = len - dist;
+          for (var c = 0; c < copyLen; c++) out[len++] = out[from++];
+        }
+      } else {
+        throw new Error(DE.INFLATE_ERROR + 'reserved block type');
+      }
+
+      if (final) break;
+    }
+
+    return out.subarray(0, len);
+  }
+
+  /**
+   * Inflate a zlib (RFC 1950) stream, validating the header and Adler-32 trailer.
+   * These are the wrappers a GPK index and a GPK entry payload use.
+   */
+  DE.inflateZlib = function (data, start, count) {
+    if (count === undefined) count = data.length - (start || 0);
+    if (count < 6) throw new Error(DE.INFLATE_ERROR + 'zlib stream too short');
+    var base = start || 0;
+    var cmf = data[base], flg = data[base + 1];
+    if ((cmf & 0x0F) !== 8) throw new Error(DE.INFLATE_ERROR + 'not a zlib stream (CM=' + (cmf & 0x0F) + ')');
+    if (((cmf << 8) | flg) % 31 !== 0) throw new Error(DE.INFLATE_ERROR + 'bad zlib header checksum');
+    if ((flg & 0x20) !== 0) throw new Error(DE.INFLATE_ERROR + 'zlib preset dictionary not supported');
+
+    var raw = inflateRaw(data, base + 2, base + count);
+    var trailer = base + count - 4;
+    var expected = ((data[trailer] << 24) | (data[trailer + 1] << 16) |
+                    (data[trailer + 2] << 8) | data[trailer + 3]) >>> 0;
+    if (adler32(raw) !== expected) throw new Error(DE.INFLATE_ERROR + 'adler32 mismatch');
+    return raw;
+  };
+
+  DE.inflateRaw = inflateRaw;
+
+  function adler32(data) {
+    var a = 1, b = 0;
+    for (var i = 0; i < data.length; i++) {
+      a = (a + data[i]) % 65521;
+      b = (b + a) % 65521;
+    }
+    return ((b << 16) | a) >>> 0;
+  }
+
+  // ==================================================================== GPK
+
+  var MAGIC_PIDX = 'STKFile0PIDX';
+  var MAGIC_PACKFILE = 'STKFile0PACKFILE';
+  var FOOTER_LEN = 32;
+  var METHOD_DEFLATE = 0x544C4644; // 'DFLT' little-endian
+
+  function asciiAt(bytes, offset, text) {
+    for (var i = 0; i < text.length; i++) {
+      if (bytes[offset + i] !== text.charCodeAt(i)) return false;
+    }
+    return true;
+  }
+
+  function u32(bytes, offset) {
+    return (bytes[offset] | (bytes[offset + 1] << 8) |
+            (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+  }
+
+  DE.u32 = u32;
+
+  DE.GpkEntry = function () {
+    this.name = '';
+    this.offset = 0;
+    this.size = 0;
+    this.method = 0;
+    this.unpackedSize = 0;
+    this.header = new Uint8Array(0);
+  };
+
+  DE.GpkEntry.prototype.isCompressed = function () {
+    return this.method === METHOD_DEFLATE && this.unpackedSize !== 0;
+  };
+
+  DE.GpkEntry.prototype.storedLength = function () {
+    return this.size - this.header.length;
+  };
+
+  function decodeUtf16(bytes, offset, unitCount) {
+    var out = '';
+    for (var i = 0; i < unitCount; i++) {
+      out += String.fromCharCode(bytes[offset + i * 2] | (bytes[offset + i * 2 + 1] << 8));
+    }
+    return out;
+  }
+
+  /**
+   * Open a GPK archive from an ArrayBuffer.
+   *
+   * The key is the 16-byte CODE/CIPHERCODE blob lifted from the game executable. Entry data
+   * is read lazily from the same buffer, so a whole archive stays a single allocation.
+   */
+  DE.openGpk = function (buffer, keyBytes) {
+    var bytes = new Uint8Array(buffer);
+    var total = bytes.length;
+    if (total < FOOTER_LEN) throw new Error('GPK 太小');
+
+    var footer = total - FOOTER_LEN;
+    if (!asciiAt(bytes, footer, MAGIC_PIDX) || !asciiAt(bytes, footer + 16, MAGIC_PACKFILE)) {
+      throw new Error('缺少 STKFile0 footer，不是 GPK 归档');
+    }
+
+    var indexLen = u32(bytes, footer + 12);
+    if (indexLen === 0 || indexLen + FOOTER_LEN > total) {
+      throw new Error('索引长度不合理：' + indexLen);
+    }
+
+    var indexOffset = total - FOOTER_LEN - indexLen;
+    var raw = new Uint8Array(indexLen);
+    raw.set(bytes.subarray(indexOffset, indexOffset + indexLen));
+
+    var key = keyBytes;
+    if (!key || key.length !== 16) throw new Error('GPK 密钥必须是 16 字节');
+    for (var i = 0; i < raw.length; i++) raw[i] ^= key[i & 15];
+
+    var want = u32(raw, 0);
+    var index = DE.inflateZlib(raw, 4, raw.length - 4);
+
+    var archive = new DE.GpkArchive();
+    archive.bytes = bytes;
+    archive.indexOffset = indexOffset;
+    archive.inflatedLength = index.length;
+    archive.inflatedHeader4 = want;
+    archive.entries = [];
+    archive.byName = {};
+
+    var pos = 0;
+    while (pos + 2 <= index.length) {
+      var units = index[pos] | (index[pos + 1] << 8);
+      pos += 2;
+      if (units === 0) break;
+
+      var nameBytes = units * 2;
+      if (pos + nameBytes + 23 > index.length) break;
+
+      var name = decodeUtf16(index, pos, units).replace(/\\/g, '/');
+      pos += nameBytes;
+      pos += 6; // reserved
+
+      var entry = new DE.GpkEntry();
+      entry.offset = u32(index, pos); pos += 4;
+      entry.size = u32(index, pos); pos += 4;
+      entry.method = u32(index, pos); pos += 4;
+      entry.unpackedSize = u32(index, pos); pos += 4;
+
+      var headerLen = index[pos]; pos += 1;
+      if (pos + headerLen > index.length) break;
+      entry.header = index.subarray(pos, pos + headerLen);
+      pos += headerLen;
+
+      entry.name = name;
+      archive.byName[name.toLowerCase()] = archive.entries.length;
+      archive.entries.push(entry);
+    }
+
+    return archive;
+  };
+
+  DE.GpkArchive = function () {
+    this.bytes = null;
+    this.entries = [];
+    this.byName = {};
+    this.indexOffset = 0;
+    this.inflatedLength = 0;
+    this.inflatedHeader4 = 0;
+  };
+
+  DE.GpkArchive.prototype.find = function (name) {
+    if (!name) return null;
+    var idx = this.byName[name.replace(/\\/g, '/').toLowerCase()];
+    return idx === undefined ? null : this.entries[idx];
+  };
+
+  /**
+   * Decode one entry.
+   *
+   * The inline `header` is the first `header_len` bytes of the compressed stream and lives in
+   * the index rather than the data region. The bytes on disk are therefore
+   * `size - header_len` long, and the real stream is `header || disk_bytes`. Reading `size`
+   * bytes at `offset` — what GARbro-derived extractors do — overruns into the next entry.
+   */
+  DE.GpkArchive.prototype.read = function (entry) {
+    var stored = entry.storedLength();
+    if (stored < 0) throw new Error('条目大小异常：' + entry.name);
+
+    var whole;
+    if (entry.header.length === 0) {
+      whole = this.bytes.subarray(entry.offset, entry.offset + stored);
+    } else {
+      whole = new Uint8Array(entry.header.length + stored);
+      whole.set(entry.header, 0);
+      whole.set(this.bytes.subarray(entry.offset, entry.offset + stored), entry.header.length);
+    }
+
+    if (!entry.isCompressed()) return whole;
+    return DE.inflateZlib(whole, 0, whole.length);
+  };
+
+  DE.GpkArchive.prototype.readNamed = function (name) {
+    var entry = this.find(name);
+    return entry === null ? null : this.read(entry);
+  };
+
+  /** Resolve a script asset reference like "SysSe/NEWSYS/SECLICK_01" to an archive + entry. */
+  var ASSET_EXTENSIONS = ['.WMV', '.OGG', '.PNG', '.BMP', '.TXT', '.DAT'];
+
+  DE.GpkArchive.prototype.resolve = function (reference) {
+    if (!reference) return null;
+    var normalized = String(reference).replace(/\\/g, '/').trim();
+    var entry = this.find(normalized);
+    if (entry !== null) return entry;
+    for (var i = 0; i < ASSET_EXTENSIONS.length; i++) {
+      entry = this.find(normalized + ASSET_EXTENSIONS[i]);
+      if (entry !== null) return entry;
+    }
+    return null;
+  };
+
+  // ==================================================================== .ORS
+
+  DE.ORS_FPS = 24;
+
+  DE.ORS_KINDS = ['Unknown', 'PrintText', 'PlayVoice', 'CreateBG', 'PlayMovie', 'EndRoll',
+    'PlaySe', 'PlayBgm', 'EndBgm', 'BlackFade', 'WhiteFade', 'SetSelect', 'MoveSom',
+    'SkipFrame', 'Next', 'PlayEs'];
+
+  function mapKind(command) {
+    switch (command.toLowerCase()) {
+      case 'printtext': return 'PrintText';
+      case 'playvoice': return 'PlayVoice';
+      case 'createbg': return 'CreateBG';
+      case 'playmovie': return 'PlayMovie';
+      case 'endroll': return 'EndRoll';
+      case 'playse': return 'PlaySe';
+      case 'playbgm': return 'PlayBgm';
+      case 'endbgm': return 'EndBgm';
+      case 'blackfade': return 'BlackFade';
+      case 'whitefade': return 'WhiteFade';
+      case 'setselect': return 'SetSelect';
+      case 'movesom': return 'MoveSom';
+      case 'skipframe': return 'SkipFrame';
+      case 'next': return 'Next';
+      case 'playes': return 'PlayEs';
+      default: return 'Unknown';
+    }
+  }
+
+  /** "mm:ss:ff" (also tolerates "hh:mm:ss:ff" and "ss:ff") -> frames, or -1. */
+  DE.parseOrsTime = function (value) {
+    if (value === null || value === undefined) return -1;
+    value = String(value).trim();
+    if (value.length === 0) return -1;
+
+    var parts = value.split(':');
+    if (parts.length < 2 || parts.length > 4) return -1;
+
+    var nums = [];
+    for (var i = 0; i < parts.length; i++) {
+      var text = parts[i].trim();
+      if (!/^[+-]?\d+$/.test(text)) return -1;
+      nums.push(parseInt(text, 10));
+    }
+
+    var minutes, seconds, frames;
+    if (nums.length === 4) { minutes = nums[0] * 60 + nums[1]; seconds = nums[2]; frames = nums[3]; }
+    else if (nums.length === 3) { minutes = nums[0]; seconds = nums[1]; frames = nums[2]; }
+    else { minutes = 0; seconds = nums[0]; frames = nums[1]; }
+
+    return (minutes * 60 + seconds) * DE.ORS_FPS + frames;
+  };
+
+  DE.formatOrsTime = function (frames) {
+    if (frames < 0) frames = 0;
+    var totalSeconds = Math.floor(frames / DE.ORS_FPS);
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    return pad(Math.floor(totalSeconds / 60)) + ':' + pad(totalSeconds % 60) + ':' + pad(frames % DE.ORS_FPS);
+  };
+
+  /** Tabs when present, otherwise the ", " separator used by localised scripts. */
+  DE.splitOrsFields = function (value) {
+    if (value.indexOf('\t') >= 0) {
+      return value.split('\t').map(function (x) { return x.trim(); });
+    }
+    var parts = value.split(', ');
+    if (parts.length === 1) {
+      parts = value.split(',');
+      for (var i = 0; i < parts.length; i++) parts[i] = parts[i].trim();
+    }
+    return parts;
+  };
+
+  function parseLeadingInt(value, fallback) {
+    if (value === null || value === undefined) return fallback;
+    var text = String(value).trim();
+    return /^[+-]?\d+$/.test(text) ? parseInt(text, 10) : fallback;
+  }
+
+  /** UTF-16 with BOM when present, else strict UTF-8, else the GBK code page of Chinese builds. */
+  DE.decodeScriptText = function (bytes) {
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+      return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+    }
+    if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+      return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+    }
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch (e) {
+      try { return new TextDecoder('gbk').decode(bytes); }
+      catch (e2) { return new TextDecoder('windows-1252').decode(bytes); }
+    }
+  };
+
+  /**
+   * Parse an .ORS timeline.
+   *
+   * Faithful to the C# parser, including the two details that matter:
+   *   - statements are picked up with a global regex over the whole text, so a value may
+   *     contain newlines;
+   *   - events are sorted stably by start frame, with source order as the tiebreak.
+   */
+  DE.parseOrs = function (name, bytes) {
+    var text = DE.decodeScriptText(bytes);
+    var script = {
+      name: name,
+      length: -1,
+      skipTo: -1,
+      hasChoice: false,
+      choiceFrame: -1,
+      events: []
+    };
+
+    var statement = /\[\s*([A-Za-z0-9_]+)\s*\]\s*=\s*"([^"]*)"/g;
+    var order = 0;
+    var match;
+
+    while ((match = statement.exec(text)) !== null) {
+      var command = match[1];
+      var value = match[2];
+
+      var event = {
+        kind: mapKind(command),
+        command: command,
+        start: -1,
+        end: -1,
+        fields: DE.splitOrsFields(value),
+        order: order++,
+        speaker: null,
+        text: null,
+        asset: null,
+        slot: 0,
+        flag: 0,
+        tag: null,
+        fadeMode: null,
+        strength: 0,
+        choiceA: null,
+        choiceB: null
+      };
+
+      if (event.fields.length > 0) event.start = DE.parseOrsTime(event.fields[0]);
+      if (event.fields.length >= 2) {
+        var maybeEnd = DE.parseOrsTime(event.fields[event.fields.length - 1]);
+        if (maybeEnd >= 0) event.end = maybeEnd;
+      }
+
+      decodeOrsEvent(event);
+
+      if (event.kind === 'SkipFrame' && event.start >= 0) script.skipTo = event.start;
+      if (event.kind === 'Next' && event.start >= 0) script.length = event.start;
+      if (event.kind === 'SetSelect') {
+        script.hasChoice = true;
+        if (script.choiceFrame < 0 || event.start < script.choiceFrame) script.choiceFrame = event.start;
+      }
+
+      script.events.push(event);
+    }
+
+    script.events.sort(function (a, b) { return a.start - b.start; });
+
+    if (script.length < 0) {
+      var max = 0;
+      for (var i = 0; i < script.events.length; i++) {
+        if (script.events[i].end > max) max = script.events[i].end;
+        if (script.events[i].start > max) max = script.events[i].start;
+      }
+      script.length = max;
+    }
+
+    return script;
+  };
+
+  function orsArgumentCount(event) {
+    var n = event.fields.length - 1;
+    if (event.end >= 0) n -= 1;
+    return n < 0 ? 0 : n;
+  }
+
+  function orsArg(event, index) {
+    var argCount = event.fields.length;
+    if (event.end >= 0) argCount -= 1;
+    var position = index + 1;
+    if (position >= argCount) return null;
+    return event.fields[position];
+  }
+
+  DE.orsArg = orsArg;
+
+  function decodeOrsEvent(event) {
+    switch (event.kind) {
+      case 'PrintText':
+        event.speaker = orsArg(event, 0);
+        var last = orsArgumentCount(event) - 1;
+        if (last >= 1) {
+          var parts = [];
+          for (var i = 1; i <= last; i++) parts.push(orsArg(event, i));
+          event.text = parts.join(', ');
+        }
+        break;
+
+      case 'PlayVoice':
+        event.asset = orsArg(event, 0);
+        event.flag = parseLeadingInt(orsArg(event, 1), 0);
+        event.tag = orsArg(event, 2);
+        break;
+
+      case 'CreateBG':
+        event.tag = orsArg(event, 0);
+        event.asset = orsArg(event, 1);
+        break;
+
+      case 'PlayMovie':
+      case 'EndRoll':
+        event.asset = orsArg(event, 0);
+        event.flag = parseLeadingInt(orsArg(event, 1), 0);
+        break;
+
+      case 'PlaySe':
+        event.slot = parseLeadingInt(orsArg(event, 0), 0);
+        event.asset = orsArg(event, 1);
+        break;
+
+      case 'PlayBgm':
+      case 'EndBgm':
+        event.asset = orsArg(event, 0);
+        break;
+
+      case 'BlackFade':
+      case 'WhiteFade':
+        event.fadeMode = orsArg(event, 0);
+        break;
+
+      case 'MoveSom':
+        event.strength = parseLeadingInt(orsArg(event, 0), 0);
+        break;
+
+      case 'SetSelect':
+        event.choiceA = orsArg(event, 0);
+        event.choiceB = orsArg(event, 1);
+        break;
+    }
+  }
+
+  // ==================================================================== helpers
+
+  /** 16-byte key from a lowercase/uppercase hex string. */
+  DE.keyFromHex = function (hex) {
+    if (hex.length !== 32) throw new Error('密钥应为 32 个十六进制字符');
+    var out = new Uint8Array(16);
+    for (var i = 0; i < 16; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  };
+
+  DE.toHex = function (bytes) {
+    var out = '';
+    for (var i = 0; i < bytes.length; i++) {
+      var b = bytes[i];
+      out += (b < 16 ? '0' : '') + b.toString(16);
+    }
+    return out;
+  };
+
+  DE.fromBase64 = function (text) {
+    var binary = atob(text);
+    var out = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out;
+  };
+
+  DE.sha1Hex = function (bytes) {
+    return crypto.subtle.digest('SHA-1', bytes).then(function (digest) {
+      return DE.toHex(new Uint8Array(digest));
+    });
+  };
+
+  return DE;
+});
+</script>
+<script>/* PE resource reader — a JavaScript port of the C# PeResources in days_launcher/src/Game.cs.
+ *
+ * The GPK index key ships as a CODE / CIPHERCODE resource inside the game executable. On the
+ * desktop this program reads it directly from the user's own SCHOOLDAYS HQ.exe. On iPhone and
+ * iPad the file picker cannot reach into a folder, so the practical route is the small
+ * `daysengine-key.json` the desktop build exports with --gpkkey; this reader is the fallback
+ * for a user who does have the executable in their Files app.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  root.DaysEnginePe = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var api = {};
+
+  function u16(b, o) { return b[o] | (b[o + 1] << 8); }
+  function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+
+  function sections(bytes) {
+    if (bytes.length < 0x40 || bytes[0] !== 0x4D || bytes[1] !== 0x5A) throw new Error('不是 PE 可执行文件');
+    var peOffset = u32(bytes, 0x3C);
+    if (peOffset + 24 > bytes.length ||
+        bytes[peOffset] !== 0x50 || bytes[peOffset + 1] !== 0x45) {
+      throw new Error('PE 签名无效');
+    }
+    var coff = peOffset + 4;
+    var count = u16(bytes, coff + 2);
+    var optionalSize = u16(bytes, coff + 16);
+    var optional = coff + 20;
+    var magic = u16(bytes, optional);
+    var dirBase;
+    if (magic === 0x10B) dirBase = optional + 96;
+    else if (magic === 0x20B) dirBase = optional + 112;
+    else throw new Error('未知的 PE magic 0x' + magic.toString(16));
+
+    var resourceRva = u32(bytes, dirBase + 2 * 8);
+    if (resourceRva === 0) throw new Error('该文件没有资源目录');
+
+    var base = optional + optionalSize;
+    var list = [];
+    for (var i = 0; i < count; i++) {
+      var s = base + i * 40;
+      list.push({
+        virtualSize: u32(bytes, s + 8),
+        virtualAddress: u32(bytes, s + 12),
+        rawSize: u32(bytes, s + 16),
+        rawPointer: u32(bytes, s + 20)
+      });
+    }
+    return { sections: list, resourceRva: resourceRva, bytes: bytes };
+  }
+
+  function resolveResourceBase(pe) {
+    for (var i = 0; i < pe.sections.length; i++) {
+      var s = pe.sections[i];
+      var span = Math.max(s.virtualSize, s.rawSize);
+      if (s.virtualAddress <= pe.resourceRva && pe.resourceRva < s.virtualAddress + span) {
+        return pe.resourceRva - s.virtualAddress + s.rawPointer;
+      }
+    }
+    throw new Error('无法解析资源目录 RVA');
+  }
+
+  function rvaToOffset(pe, rva) {
+    for (var i = 0; i < pe.sections.length; i++) {
+      var s = pe.sections[i];
+      var span = Math.max(s.virtualSize, s.rawSize);
+      if (s.virtualAddress <= rva && rva < s.virtualAddress + span) {
+        return rva - s.virtualAddress + s.rawPointer;
+      }
+    }
+    return -1;
+  }
+
+  function readDirectory(pe, resourceBase, directoryOffset) {
+    var bytes = pe.bytes;
+    var root = resourceBase + directoryOffset;
+    var named = u16(bytes, root + 12);
+    var ids = u16(bytes, root + 14);
+    var entries = [];
+    for (var i = 0; i < named + ids; i++) {
+      var e = root + 16 + i * 8;
+      var nameOrId = u32(bytes, e);
+      var dataOrDir = u32(bytes, e + 4);
+      var entry = {
+        offset: dataOrDir & 0x7FFFFFFF,
+        isDirectory: (dataOrDir & 0x80000000) !== 0,
+        name: null,
+        id: null
+      };
+      if ((nameOrId & 0x80000000) !== 0) {
+        var nameOffset = resourceBase + (nameOrId & 0x7FFFFFFF);
+        var length = u16(bytes, nameOffset);
+        var out = '';
+        for (var c = 0; c < length; c++) {
+          out += String.fromCharCode(u16(bytes, nameOffset + 2 + c * 2));
+        }
+        entry.name = out;
+      } else {
+        entry.id = nameOrId;
+      }
+      entries.push(entry);
+    }
+    return entries;
+  }
+
+  /**
+   * Extract a named resource.
+   *
+   * The C# extractor descends type -> name -> first language entry, which is exactly what the
+   * key resource needs, so the same three hops are taken here.
+   */
+  api.findResource = function (bytes, typeName, resourceName) {
+    var pe = sections(bytes);
+    var resourceBase = resolveResourceBase(pe);
+
+    var typeEntry = null;
+    readDirectory(pe, resourceBase, 0).forEach(function (entry) {
+      if (entry.isDirectory && entry.name === typeName) typeEntry = entry;
+    });
+    if (typeEntry === null) throw new Error('没有资源类型 "' + typeName + '"');
+
+    var nameEntry = null;
+    readDirectory(pe, resourceBase, typeEntry.offset).forEach(function (entry) {
+      if (entry.isDirectory && entry.name === resourceName) nameEntry = entry;
+    });
+    if (nameEntry === null) throw new Error('没有资源 "' + resourceName + '"');
+
+    var languages = readDirectory(pe, resourceBase, nameEntry.offset);
+    if (languages.length === 0) throw new Error('资源没有语言条目');
+
+    var dataEntry = resourceBase + languages[0].offset;
+    var dataRva = u32(bytes, dataEntry);
+    var dataSize = u32(bytes, dataEntry + 4);
+    var offset = rvaToOffset(pe, dataRva);
+    if (offset < 0) throw new Error('无法解析资源数据 RVA');
+
+    return bytes.subarray(offset, offset + dataSize);
+  };
+
+  /** The 16-byte GPK index key, from CODE / CIPHERCODE (a 20-byte blob keeps its last 16). */
+  api.extractGpkKey = function (bytes) {
+    var resource = api.findResource(bytes, 'CODE', 'CIPHERCODE');
+    if (resource.length === 16) return resource;
+    if (resource.length === 20) return resource.subarray(4, 20);
+    throw new Error('CIPHERCODE 资源长度异常：' + resource.length);
+  };
+
+  /** "82ee1db3..." -> Uint8Array(16). */
+  api.keyFromHex = function (hex) {
+    var clean = String(hex).trim().toLowerCase().replace(/^0x/, '').replace(/[^0-9a-f]/g, '');
+    if (clean.length !== 32) throw new Error('密钥应为 32 个十六进制字符，实际 ' + clean.length + ' 个');
+    var out = new Uint8Array(16);
+    for (var i = 0; i < 16; i++) out[i] = parseInt(clean.substr(i * 2, 2), 16);
+    return out;
+  };
+
+  return api;
+});
+</script>
+<script>/* DaysEngine Web — engine layer.
+ *
+ * Holds the loaded game (its GPK archives), decodes the key, and drives the launcher's own
+ * background music and interface sounds through Web Audio.
+ *
+ * Why Web Audio rather than the JS inflate path for sound: Safari decodes Ogg Vorbis natively,
+ * so an SE or BGM payload can go straight to decodeAudioData. The JavaScript inflate in
+ * Core.js is only needed when an archive does not mark its entries as DFLT-compressed.
+ */
+(function (root) {
+  'use strict';
+
+  var DE = root.DaysEngine;
+  var PE = root.DaysEnginePe;
+
+  var KEY_STORAGE = 'daysengine.key';
+
+  function Engine() {
+    this.archives = {};        // PACKNAME (upper) -> { name, archive, bytes }
+    this.archiveList = [];
+    this.entryIndex = {};      // pack name -> archive, for reference resolution
+    this.errors = [];
+    this.key = null;           // Uint8Array(16)
+    this.keySource = '';
+    this.gameTitle = '';
+    this.pendingFiles = [];    // ArrayBuffer kept alive until the key arrives
+
+    this.ctx = null;
+    this.master = null;
+    this.musicGain = null;
+    this.effectGain = null;
+    this.music = null;         // current AudioBufferSourceNode
+    this.musicName = '';
+    this.buffers = {};         // cache key -> AudioBuffer
+    this.volumes = { master: 0.8, music: 0.55, effects: 0.8 };
+    this.notes = [];
+  }
+
+  // ---------------------------------------------------------------- key
+
+  Engine.prototype.loadStoredKey = function () {
+    try {
+      var raw = localStorage.getItem(KEY_STORAGE);
+      if (!raw) return false;
+      var parsed = JSON.parse(raw);
+      this.key = PE.keyFromHex(parsed.key);
+      this.keySource = '本地记录（' + (parsed.title || '未知') + '）';
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  Engine.prototype.setKeyFromObject = function (object) {
+    if (!object || !object.key) throw new Error('密钥文件里没有 key 字段');
+    this.key = PE.keyFromHex(object.key);
+    this.keySource = '密钥文件（' + (object.title || '未知') + '）';
+    try {
+      localStorage.setItem(KEY_STORAGE, JSON.stringify({ key: object.key, title: object.title || '' }));
+    } catch (e) { /* private mode: keep it in memory only */ }
+  };
+
+  Engine.prototype.setKeyFromHex = function (hex) {
+    this.key = PE.keyFromHex(hex);
+    this.keySource = '手动输入';
+    try {
+      localStorage.setItem(KEY_STORAGE, JSON.stringify({
+        key: DE.toHex(this.key), title: this.gameTitle || '手动'
+      }));
+    } catch (e) { /* ignore */ }
+  };
+
+  Engine.prototype.setKeyFromExecutable = function (bytes) {
+    this.key = PE.extractGpkKey(bytes);
+    this.keySource = '游戏主程序 CODE/CIPHERCODE';
+    try {
+      localStorage.setItem(KEY_STORAGE, JSON.stringify({
+        key: DE.toHex(this.key), title: this.gameTitle || ''
+      }));
+    } catch (e) { /* ignore */ }
+  };
+
+  // ---------------------------------------------------------------- archives
+
+  Engine.prototype.packKey = function (fileName) {
+    return String(fileName).replace(/\\/g, '/').split('/').pop().replace(/\.gpk$/i, '').toUpperCase();
+  };
+
+  /** Add one GPK file. Without a key the bytes are parked until one arrives. */
+  Engine.prototype.addArchive = function (fileName, buffer) {
+    var name = this.packKey(fileName);
+    if (!this.key) {
+      this.pendingFiles.push({ name: name, buffer: buffer });
+      return { name: name, pending: true };
+    }
+
+    try {
+      var archive = DE.openGpk(buffer, this.key);
+      this.archives[name] = { name: name, archive: archive, buffer: buffer, bytes: buffer.byteLength };
+      this.rebuildIndex();
+      return { name: name, pending: false, entries: archive.entries.length };
+    } catch (error) {
+      this.errors.push(name + '.GPK：' + error.message);
+      return { name: name, pending: false, error: error.message };
+    }
+  };
+
+  /** Open everything that was waiting for a key. Called after the key is set. */
+  Engine.prototype.flushPending = function () {
+    var pending = this.pendingFiles;
+    this.pendingFiles = [];
+    var opened = 0;
+    for (var i = 0; i < pending.length; i++) {
+      var result = this.addArchive(pending[i].name + '.GPK', pending[i].buffer);
+      if (result && !result.error && !result.pending) opened++;
+    }
+    return opened;
+  };
+
+  Engine.prototype.rebuildIndex = function () {
+    var self = this;
+    this.archiveList = Object.keys(this.archives).sort().map(function (name) { return self.archives[name]; });
+    this.entryIndex = {};
+    this.archiveList.forEach(function (item) { self.entryIndex[item.name] = item.archive; });
+  };
+
+  Engine.prototype.entryCount = function () {
+    var total = 0;
+    this.archiveList.forEach(function (item) { total += item.archive.entries.length; });
+    return total;
+  };
+
+  Engine.prototype.totalBytes = function () {
+    var total = 0;
+    this.archiveList.forEach(function (item) { total += item.bytes; });
+    return total;
+  };
+
+  Engine.prototype.clear = function () {
+    this.archives = {};
+    this.archiveList = [];
+    this.entryIndex = {};
+    this.errors = [];
+    this.pendingFiles = [];
+    this.buffers = {};
+    this.notes = [];
+  };
+
+  /**
+   * Resolve a script asset reference ("SysSe/NEWSYS/SECLICK_01") to decoded bytes.
+   * The first path segment names the pack, exactly as in the desktop engine.
+   */
+  Engine.prototype.resolve = function (reference) {
+    if (!reference) return null;
+    var normalized = String(reference).replace(/\\/g, '/').trim();
+    var slash = normalized.indexOf('/');
+    if (slash <= 0) return null;
+
+    var pack = normalized.substring(0, slash).toUpperCase();
+    var rest = normalized.substring(slash + 1);
+    var item = this.archives[pack];
+    if (!item) return null;
+
+    var entry = item.archive.resolve(rest);
+    if (entry === null) return null;
+    return { pack: pack, entry: entry, name: entry.name, archive: item.archive };
+  };
+
+  Engine.prototype.readResolved = function (resolved) {
+    if (!resolved) return null;
+    return resolved.archive.read(resolved.entry);
+  };
+
+  // ---------------------------------------------------------------- audio
+
+  Engine.prototype.ensureContext = function () {
+    if (this.ctx) return this.ctx;
+    var Ctor = root.AudioContext || root.webkitAudioContext;
+    if (!Ctor) { this.notes.push('此浏览器没有 Web Audio'); return null; }
+    this.ctx = new Ctor();
+    this.master = this.ctx.createGain();
+    this.musicGain = this.ctx.createGain();
+    this.effectGain = this.ctx.createGain();
+    this.musicGain.connect(this.master);
+    this.effectGain.connect(this.master);
+    this.master.connect(this.ctx.destination);
+    this.applyVolumes();
+    return this.ctx;
+  };
+
+  Engine.prototype.applyVolumes = function () {
+    if (!this.ctx) return;
+    this.master.gain.value = this.volumes.master;
+    this.musicGain.gain.value = this.volumes.music;
+    this.effectGain.gain.value = this.volumes.effects;
+  };
+
+  /** iOS only starts audio inside a user gesture, so every entry point resumes first. */
+  Engine.prototype.unlock = function () {
+    var ctx = this.ensureContext();
+    if (!ctx) return Promise.resolve(false);
+    this.applyVolumes();
+    if (ctx.state === 'suspended' && ctx.resume) {
+      return ctx.resume().then(function () { return true; }, function () { return false; });
+    }
+    return Promise.resolve(ctx.state !== 'suspended');
+  };
+
+  Engine.prototype.decode = function (cacheKey, payload) {
+    var self = this;
+    if (!payload || payload.length === 0) return Promise.reject(new Error('空数据'));
+
+    if (this.buffers[cacheKey]) return Promise.resolve(this.buffers[cacheKey]);
+
+    var ctx = this.ensureContext();
+    if (!ctx) return Promise.reject(new Error('没有 Web Audio'));
+
+    // decodeAudioData wants a standalone ArrayBuffer; Safari historically only accepted the
+    // callback form, so both are supported here.
+    var copy = payload.slice().buffer;
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      function done(buffer) {
+        if (settled) return;
+        settled = true;
+        self.buffers[cacheKey] = buffer;
+        resolve(buffer);
+      }
+      function fail(error) {
+        if (settled) return;
+        settled = true;
+        reject(error || new Error('解码失败'));
+      }
+      try {
+        var maybe = ctx.decodeAudioData(copy, done, fail);
+        if (maybe && typeof maybe.then === 'function') maybe.then(done, fail);
+      } catch (error) {
+        fail(error);
+      }
+    });
+  };
+
+  /** Decode an archive entry that holds audio, coping with DFLT-compressed entries. */
+  Engine.prototype.loadAudio = function (resolved, label) {
+    var bytes;
+    try {
+      bytes = this.readResolved(resolved);
+    } catch (error) {
+      return Promise.reject(new Error(label + ' 读取失败：' + error.message));
+    }
+    return this.decode('a:' + label, bytes);
+  };
+
+  Engine.prototype.playMusic = function (resolved, label) {
+    var self = this;
+    if (!resolved) return Promise.resolve(false);
+    return this.unlock().then(function () {
+      return self.loadAudio(resolved, label);
+    }).then(function (buffer) {
+      self.stopMusic();
+      var source = self.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      source.connect(self.musicGain);
+      source.start(0);
+      self.music = source;
+      self.musicName = label;
+      return true;
+    }).catch(function (error) {
+      self.notes.push('音乐失败 ' + label + '：' + error.message);
+      return false;
+    });
+  };
+
+  Engine.prototype.stopMusic = function () {
+    if (this.music) {
+      try { this.music.stop(); } catch (e) { /* already stopped */ }
+      try { this.music.disconnect(); } catch (e) { /* ignore */ }
+      this.music = null;
+    }
+  };
+
+  Engine.prototype.playCue = function (resolved, label) {
+    var self = this;
+    if (!resolved) return Promise.resolve(false);
+    return this.unlock().then(function () {
+      return self.loadAudio(resolved, label);
+    }).then(function (buffer) {
+      var source = self.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(self.effectGain);
+      source.start(0);
+      return true;
+    }).catch(function (error) {
+      self.notes.push('音效失败 ' + label + '：' + error.message);
+      return false;
+    });
+  };
+
+  /** The launcher theme: a menu track from BGM.GPK, with fallbacks. */
+  var MENU_CANDIDATES = [
+    'SSD_BGM/MENU_SSDBGM01', 'SSD_BGM/MENU_SSDBGM02', 'SSD_BGM/MENU_BGM01',
+    'SSD_BGM/MENU_BGM02', 'SSD_BGM/TITLE_BGM01', 'SSD_BGM/BGM_MENU',
+    'SSD_BGM/BGM_01-00-B00', 'SD_BGM/SDBGM01_LOOP', 'SD_BGM/SDBGM01_INT'
+  ];
+
+  Engine.prototype.findMenuMusic = function () {
+    for (var i = 0; i < MENU_CANDIDATES.length; i++) {
+      var normalized = MENU_CANDIDATES[i].replace(/^SSD_BGM\//, 'BGM/').replace(/^SD_BGM\//, 'BGM/');
+      var resolved = this.resolve(normalized);
+      if (resolved) return resolved;
+    }
+    // Any OGG in BGM.GPK will do, preferring a non-loop master track.
+    var bgm = this.archives['BGM'];
+    if (!bgm) return null;
+    var fallback = null;
+    for (var j = 0; j < bgm.archive.entries.length; j++) {
+      var entry = bgm.archive.entries[j];
+      if (!/\.ogg$/i.test(entry.name)) continue;
+      if (!/_LOOP\.ogg$/i.test(entry.name)) return { pack: 'BGM', entry: entry, name: entry.name, archive: bgm.archive };
+      if (fallback === null) fallback = { pack: 'BGM', entry: entry, name: entry.name, archive: bgm.archive };
+    }
+    return fallback;
+  };
+
+  var CUE_CANDIDATES = {
+    click: ['NEWSYS/SECLICK_01', 'NEWSYS/SECLICK_02'],
+    cancel: ['NEWSYS/SECANCEL_01', 'NEWSYS/SECANCEL_02'],
+    select: ['NEWSYS/SESELECT', 'NEWSYS/SECLICK_01'],
+    hover: ['NEWSYS/SEVIEW', 'NEWSYS/SESELECT']
+  };
+
+  /** Which SysSe entry backs each cue, for the diagnostics pane. */
+  Engine.prototype.cueMap = function () {
+    var map = {};
+    for (var cue in CUE_CANDIDATES) {
+      if (!Object.prototype.hasOwnProperty.call(CUE_CANDIDATES, cue)) continue;
+      var list = CUE_CANDIDATES[cue];
+      for (var i = 0; i < list.length; i++) {
+        var resolved = this.resolve('SysSe/' + list[i]);
+        if (resolved) { map[cue] = resolved; break; }
+      }
+    }
+    return map;
+  };
+
+  Engine.prototype.cue = function (resolved) {
+    if (!resolved) return Promise.resolve(false);
+    return this.playCue(resolved, resolved.name);
+  };
+
+  Engine.prototype.status = function () {
+    if (!this.key) return '未载入密钥';
+    if (this.archiveList.length === 0) return '已载入密钥，尚未选择 .GPK';
+    var text = this.archiveList.length + ' 个归档 / ' + this.entryCount().toLocaleString() + ' 个条目';
+    if (this.musicName) text += ' ｜ BGM ' + this.musicName.split('/').pop();
+    return text;
+  };
+
+  root.DaysEngineApp = { Engine: Engine, MENU_CANDIDATES: MENU_CANDIDATES };
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>/* DaysEngine Web — launcher UI.
+ *
+ * Mobile-first because this build exists for iPhone and iPad, where Safari gives us a file
+ * picker rather than a directory listing. Everything the launcher needs to say shows up in
+ * the status bar or the detail pane: no failure is silent.
+ */
+(function (root) {
+  'use strict';
+
+  var App = root.DaysEngineApp;
+  var DE = root.DaysEngine;
+  var SETTINGS_STORAGE = 'daysengine.settings';
+
+  var engine = new App.Engine();
+  var cues = {};
+  var settings = { audio: true, music: true, master: 0.8, bgm: 0.55, se: 0.8 };
+  var busy = false;
+
+  var dom = {};
+
+  function $(id) { return document.getElementById(id); }
+
+  function escapeHtml(text) {
+    return String(text === null || text === undefined ? '' : text).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function formatBytes(bytes) {
+    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+    if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return bytes + ' B';
+  }
+
+  // ---------------------------------------------------------------- settings
+
+  function loadSettings() {
+    try {
+      var raw = root.localStorage.getItem(SETTINGS_STORAGE);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      ['audio', 'music'].forEach(function (k) {
+        if (typeof parsed[k] === 'boolean') settings[k] = parsed[k];
+      });
+      ['master', 'bgm', 'se'].forEach(function (k) {
+        if (typeof parsed[k] === 'number' && parsed[k] >= 0 && parsed[k] <= 1) settings[k] = parsed[k];
+      });
+    } catch (e) { /* defaults are fine */ }
+  }
+
+  function saveSettings() {
+    try { root.localStorage.setItem(SETTINGS_STORAGE, JSON.stringify(settings)); }
+    catch (e) { /* private mode */ }
+  }
+
+  function applyVolumes() {
+    engine.volumes.master = settings.audio ? settings.master : 0;
+    engine.volumes.music = settings.bgm;
+    engine.volumes.effects = settings.se;
+    engine.applyVolumes();
+    if (dom.rangeMaster) {
+      dom.labelMaster.textContent = Math.round(settings.master * 100) + '%';
+      dom.labelMusic.textContent = Math.round(settings.bgm * 100) + '%';
+      dom.labelEffects.textContent = Math.round(settings.se * 100) + '%';
+      dom.toggleAudio.checked = settings.audio;
+      dom.toggleMusic.checked = settings.music;
+      dom.rangeMaster.value = settings.master;
+      dom.rangeMusic.value = settings.bgm;
+      dom.rangeEffects.value = settings.se;
+    }
+  }
+
+  // ---------------------------------------------------------------- audio wiring
+
+  function startMusic() {
+    if (!settings.audio || !settings.music) return Promise.resolve(false);
+    var resolved = engine.findMenuMusic();
+    if (!resolved) {
+      engine.notes.push('没有找到可用的菜单音乐');
+      render();
+      return Promise.resolve(false);
+    }
+    return engine.playMusic(resolved, resolved.name).then(function (ok) {
+      render();
+      return ok;
+    });
+  }
+
+  function stopMusic() {
+    engine.stopMusic();
+    engine.musicName = '';
+    render();
+  }
+
+  // ---------------------------------------------------------------- status + views
+
+  function setStatus(text) {
+    if (dom.status) dom.status.textContent = text;
+  }
+
+  function currentStatus() {
+    if (!engine.key) return '尚未载入密钥 — 请到「设置」选择密钥文件或输入密钥';
+    if (engine.archiveList.length === 0) return '密钥就绪（' + engine.keySource + '），请选择 .GPK 文件';
+    var text = engine.archiveList.length + ' 个归档 ｜ ' + engine.entryCount().toLocaleString() + ' 个条目';
+    if (engine.musicName) text += ' ｜ ♪ ' + engine.musicName.split('/').pop();
+    return text;
+  }
+
+  function switchView(name) {
+    ['library', 'detail', 'settings'].forEach(function (view) {
+      $('view-' + view).classList.toggle('active', view === name);
+      $('tab-' + view).classList.toggle('active', view === name);
+    });
+  }
+
+  // ---------------------------------------------------------------- rendering
+
+  function render() {
+    renderLibrary();
+    renderDetail();
+    renderSettings();
+    setStatus(busy ? '正在读取文件…' : currentStatus());
+  }
+
+  function renderLibrary() {
+    var host = dom.libraryList;
+    if (!host) return;
+    host.innerHTML = '';
+
+    if (engine.archiveList.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'card';
+      empty.innerHTML = '<h3>还没有载入归档</h3><div class="meta">' +
+        '点上面的「选择 .GPK 文件」开始。iOS 的「文件」App 里可以多选，' +
+        '也可以把整个 <code>Packs</code> 文件夹先放进 iCloud Drive 再逐个选择。<br><br>' +
+        (engine.key ? '密钥已就绪：' + escapeHtml(engine.keySource)
+                    : '<span class="pill warn">缺少密钥</span> 请先到「设置」载入密钥') +
+        '</div>';
+      host.appendChild(empty);
+      return;
+    }
+
+    engine.archiveList.forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<h3>' + escapeHtml(item.name + '.GPK') + '</h3>' +
+        '<div class="path">' + escapeHtml(item.name) + '.GPK</div>' +
+        '<div class="meta">' + item.archive.entries.length.toLocaleString() + ' 个条目 ｜ ' +
+        formatBytes(item.bytes) + ' ｜ 索引 ' + formatBytes(item.archive.inflatedLength) + '</div>' +
+        '<div class="actions">' +
+          '<button class="secondary" type="button" data-play="' + escapeHtml(item.name) + '">用这支 BGM 试听</button>' +
+        '</div>';
+      host.appendChild(card);
+    });
+
+    host.querySelectorAll('button[data-play]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var pack = button.getAttribute('data-play');
+        // Preview only: play the first OGG in that archive rather than guessing a path.
+        var item = engine.archives[pack];
+        var candidate = null;
+        if (item) {
+          for (var i = 0; i < item.archive.entries.length && candidate === null; i++) {
+            if (/\.ogg$/i.test(item.archive.entries[i].name)) {
+              candidate = { pack: pack, entry: item.archive.entries[i], name: item.archive.entries[i].name, archive: item.archive };
+            }
+          }
+        }
+        if (candidate === null) { engine.notes.push(pack + ' 里没有 .ogg'); render(); return; }
+        engine.cue(candidate);
+      });
+    });
+  }
+
+  function renderDetail() {
+    if (!dom.engineDiag) return;
+
+    var diag = [];
+    diag.push('密钥来源   : ' + (engine.key ? engine.keySource : '未载入'));
+    if (engine.key) diag.push('密钥       : ' + DE.toHex(engine.key));
+    diag.push('归档       : ' + engine.archiveList.length + ' 个，' + engine.entryCount().toLocaleString() + ' 条目，' +
+      formatBytes(engine.totalBytes()));
+    diag.push('待解锁     : ' + engine.pendingFiles.length + ' 个（缺密钥）');
+    diag.push('解码器     : 纯 JavaScript inflate（不依赖 DecompressionStream）');
+    dom.engineDiag.innerHTML = diag.join('<br>');
+
+    var audio = [];
+    audio.push('Web Audio  : ' + (engine.ctx ? (engine.ctx.state === 'running' ? '已解锁' : engine.ctx.state) : '未创建'));
+    if (engine.ctx) audio.push('采样率     : ' + engine.ctx.sampleRate + ' Hz');
+    audio.push('已解码缓存 : ' + Object.keys(engine.buffers).length + ' 个音频');
+    audio.push('当前音乐   : ' + (engine.musicName ? engine.musicName : '无'));
+    audio.push('音量       : 主 ' + Math.round(settings.master * 100) + '% ｜ BGM ' +
+      Math.round(settings.bgm * 100) + '% ｜ 音效 ' + Math.round(settings.se * 100) + '%');
+    var cueNames = Object.keys(cues);
+    audio.push('界面音效   : ' + cueNames.length + ' / 4');
+    cueNames.forEach(function (cue) { audio.push('             ' + cue + ' ← ' + cues[cue].name); });
+    engine.notes.forEach(function (note) { audio.push('备注       : ' + note); });
+    dom.audioDiag.innerHTML = audio.map(escapeHtml).join('<br>');
+
+    var lines = engine.archiveList.map(function (item) {
+      return item.name.padEnd(12) + ' 条目 ' + String(item.archive.entries.length).padStart(7) +
+             ' ｜ ' + formatBytes(item.bytes).padStart(9) +
+             ' ｜ 解压索引 ' + formatBytes(item.archive.inflatedLength);
+    });
+    dom.archiveDiag.textContent = lines.length ? lines.join('\n') : '（空）';
+    dom.errorDiag.textContent = engine.errors.length ? engine.errors.join('\n') : '（无）';
+  }
+
+  function renderSettings() {
+    if (!dom.keyState) return;
+    dom.keyState.innerHTML = engine.key
+      ? '<span class="pill ok">密钥已就绪</span> ' + escapeHtml(engine.keySource) +
+        '<br><br>' + DE.toHex(engine.key)
+      : '<span class="pill warn">尚无密钥</span> 选一个密钥文件、游戏主程序，或手动输入。';
+    applyVolumes();
+  }
+
+  // ---------------------------------------------------------------- file loading
+
+  function readFile(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(new Error('读取失败：' + file.name)); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function readText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(new Error('读取失败：' + file.name)); };
+      reader.readAsText(file);
+    });
+  }
+
+  /**
+   * Load GPK files. Without a key the bytes are parked, then opened the moment one arrives.
+   *
+   * A whole archive is held in memory, which is fine for the audio/script packs this launcher
+   * needs but not for a multi-gigabyte movie pack: iOS reclaims a tab well before that, so
+   * large files are skipped with an explanation rather than crashing the page.
+   */
+  var LARGE_FILE_BYTES = 320 * 1024 * 1024;
+
+  function loadGpkFiles(fileList) {
+    var all = Array.prototype.slice.call(fileList).filter(function (file) {
+      return /\.gpk$/i.test(file.name);
+    });
+    var files = [];
+    all.forEach(function (file) {
+      if (file.size > LARGE_FILE_BYTES) {
+        engine.notes.push('跳过 ' + file.name + '（' + formatBytes(file.size) +
+          '，超过 ' + formatBytes(LARGE_FILE_BYTES) + '；影片包不需要载入，音频包里才有声音）');
+      } else {
+        files.push(file);
+      }
+    });
+
+    if (all.length === 0) { setStatus('没有选中任何 .GPK 文件'); return Promise.resolve(); }
+    if (files.length === 0) {
+      setStatus('选中的都是超大的影片包，已跳过 — 请改选 BGM.GPK / SysSe.GPK / Script.GPK 等');
+      render();
+      return Promise.resolve();
+    }
+
+    busy = true;
+    render();
+    var index = 0;
+
+    function next() {
+      if (index >= files.length) {
+        busy = false;
+        render();
+        return Promise.resolve();
+      }
+      var file = files[index++];
+      setStatus('正在读取 ' + file.name + '（' + formatBytes(file.size) + '，' + index + '/' + files.length + '）');
+      return readFile(file).then(function (buffer) {
+        engine.addArchive(file.name, buffer);
+        return next();
+      });
+    }
+
+    return next().then(function () {
+      if (engine.key) {
+        var opened = engine.flushPending();
+        if (opened > 0) engine.notes.push('密钥到位后解锁了 ' + opened + ' 个归档');
+      }
+      return startMusic();
+    });
+  }
+
+  function loadKeyFile(file) {
+    return readText(file).then(function (text) {
+      var parsed;
+      try { parsed = JSON.parse(text); }
+      catch (e) { throw new Error('不是有效的 JSON 密钥文件'); }
+      engine.setKeyFromObject(parsed);
+    });
+  }
+
+  function loadExecutable(file) {
+    return readFile(file).then(function (buffer) {
+      engine.setKeyFromExecutable(new Uint8Array(buffer));
+    });
+  }
+
+  /** After any key change: open the parked archives, then refresh everything. */
+  function afterKeyChange() {
+    var opened = engine.flushPending();
+    if (opened > 0) engine.notes.push('密钥到位后解锁了 ' + opened + ' 个归档');
+    engine.errors = engine.errors.filter(function (line) { return line.indexOf('密钥') < 0; });
+    render();
+    return startMusic();
+  }
+
+  // ---------------------------------------------------------------- wiring
+
+  function hook() {
+    dom = {
+      libraryList: $('library-list'),
+      engineDiag: $('engine-diag'),
+      audioDiag: $('audio-diag'),
+      archiveDiag: $('archive-diag'),
+      errorDiag: $('error-diag'),
+      keyState: $('key-state'),
+      status: $('status'),
+      toggleAudio: $('toggle-audio'),
+      toggleMusic: $('toggle-music'),
+      rangeMaster: $('range-master'),
+      rangeMusic: $('range-music'),
+      rangeEffects: $('range-effects'),
+      labelMaster: $('label-master'),
+      labelMusic: $('label-music'),
+      labelEffects: $('label-effects')
+    };
+
+    $('tab-library').addEventListener('click', function () { switchView('library'); });
+    $('tab-detail').addEventListener('click', function () { switchView('detail'); });
+    $('tab-settings').addEventListener('click', function () { switchView('settings'); });
+
+    $('btn-gpk').addEventListener('click', function () { $('file-gpk').click(); });
+    $('btn-folder').addEventListener('click', function () { $('file-folder').click(); });
+    $('btn-clear').addEventListener('click', function () {
+      engine.clear();
+      render();
+      setStatus('已清空');
+    });
+
+    $('file-gpk').addEventListener('change', function (event) {
+      loadGpkFiles(event.target.files).catch(reportError);
+      event.target.value = '';
+    });
+    $('file-folder').addEventListener('change', function (event) {
+      loadGpkFiles(event.target.files).catch(reportError);
+      event.target.value = '';
+    });
+    $('file-key').addEventListener('change', function (event) {
+      if (!event.target.files.length) return;
+      loadKeyFile(event.target.files[0]).then(afterKeyChange).catch(reportError);
+      event.target.value = '';
+    });
+    $('file-exe').addEventListener('change', function (event) {
+      if (!event.target.files.length) return;
+      loadExecutable(event.target.files[0]).then(afterKeyChange).catch(reportError);
+      event.target.value = '';
+    });
+
+    $('btn-load-key').addEventListener('click', function () { $('file-key').click(); });
+    $('btn-load-exe').addEventListener('click', function () { $('file-exe').click(); });
+    $('btn-apply-key').addEventListener('click', function () {
+      try {
+        engine.setKeyFromHex($('input-key').value);
+        afterKeyChange();
+      } catch (error) {
+        reportError(error);
+      }
+    });
+
+    $('btn-start-music').addEventListener('click', function () {
+      settings.audio = true; settings.music = true; saveSettings();
+      startMusic().then(function (ok) {
+        if (!ok) setStatus('音乐没能开始 — 见「详情」里的备注');
+      });
+    });
+    $('btn-stop-music').addEventListener('click', stopMusic);
+    $('btn-test-cue').addEventListener('click', function () {
+      engine.cue(cues.select || cues.click);
+    });
+
+    $('toggle-audio').addEventListener('change', function (event) {
+      settings.audio = event.target.checked; saveSettings();
+      if (settings.audio) startMusic(); else stopMusic();
+      render();
+    });
+    $('toggle-music').addEventListener('change', function (event) {
+      settings.music = event.target.checked; saveSettings();
+      if (settings.music) startMusic(); else stopMusic();
+      render();
+    });
+    [['range-master', 'master'], ['range-music', 'bgm'], ['range-effects', 'se']].forEach(function (pair) {
+      $(pair[0]).addEventListener('input', function (event) {
+        settings[pair[1]] = parseFloat(event.target.value);
+        saveSettings();
+        applyVolumes();
+        renderDetail();
+      });
+    });
+  }
+
+  function reportError(error) {
+    busy = false;
+    setStatus('出错：' + (error && error.message ? error.message : error));
+    engine.notes.push(String(error && error.message ? error.message : error));
+    render();
+  }
+
+  function boot() {
+    loadSettings();
+    hook();
+    engine.loadStoredKey();
+    cues = engine.cueMap();
+    applyVolumes();
+    render();
+
+    // iOS will not start audio outside a gesture, so the very first tap anywhere unlocks the
+    // context and starts the theme if the game is already loaded.
+    var unlockOnce = function () {
+      document.removeEventListener('touchstart', unlockOnce);
+      document.removeEventListener('click', unlockOnce);
+      engine.unlock().then(function () {
+        if (engine.archiveList.length > 0) startMusic();
+        render();
+      });
+    };
+    document.addEventListener('touchstart', unlockOnce);
+    document.addEventListener('click', unlockOnce);
+
+    if (/[?&]autotest=1/.test(location.search)) autotest();
+  }
+
+  // ---------------------------------------------------------------- functional self-test
+
+  /**
+   * Headless functional check, driven by the same vectors.json the parser test uses.
+   *
+   * It feeds fixture data through the real Engine (not a mock), so it verifies that archives
+   * open from bytes, the key is applied, audio decodes through Web Audio, and the cue map
+   * resolves from the archives — the parts that test.html cannot reach because they need a DOM.
+   * Results go into #autotest so a headless DOM dump can read them.
+   */
+  function autotest() {
+    var lines = [];
+    var failed = 0;
+    var pending = 0;
+    var finished = false;
+
+    function assert(name, ok, detail) {
+      if (!ok) failed++;
+      lines.push((ok ? '  ok   ' : '  FAIL ') + name + (detail ? ' — ' + detail : ''));
+      flush();
+    }
+
+    function asyncStart() { pending++; }
+    function asyncDone() {
+      pending--;
+      if (pending <= 0) { finished = true; flush(); }
+    }
+
+    function flush() {
+      var node = document.getElementById('autotest');
+      if (!node) {
+        node = document.createElement('div');
+        node.id = 'autotest';
+        node.style.cssText = 'white-space:pre;font-family:monospace;font-size:11px;color:#8a92a6;';
+        document.body.appendChild(node);
+      }
+      var verdict;
+      if (failed > 0) verdict = 'AUTOTEST:FAIL';
+      else if (pending > 0 || !finished) verdict = 'AUTOTEST:INCOMPLETE';
+      else verdict = 'AUTOTEST:PASS';
+      node.textContent = verdict + ' ASSERTIONS:' + lines.length + ' FAILED:' + failed +
+        ' PENDING:' + pending + '\n' + lines.join('\n');
+      document.title = verdict + ' ' + (lines.length - failed) + '/' + lines.length;
+    }
+
+    var request = new XMLHttpRequest();
+    request.open('GET', 'test/vectors.json', true);
+    request.onerror = function () { assert('加载 vectors.json', false, '需要 --allow-file-access-from-files'); };
+    request.onload = function () {
+      if (request.status !== 0 && request.status !== 200) {
+        assert('加载 vectors.json', false, 'HTTP ' + request.status);
+        return;
+      }
+
+      var vectors;
+      try { vectors = JSON.parse(request.responseText); }
+      catch (error) { assert('解析 vectors.json', false, error.message); return; }
+      assert('加载 vectors.json', true, vectors.archives.length + ' 个归档样本');
+
+      // 1. Key handling, through the same path the settings UI uses.
+      try {
+        engine.setKeyFromHex(vectors.key);
+        assert('应用密钥', DE.toHex(engine.key) === vectors.key, engine.keySource);
+      } catch (error) {
+        assert('应用密钥', false, error.message);
+        return;
+      }
+
+      // 2. Open every fixture archive by rebuilding the file around its index bytes, which is
+      //    byte-for-byte what openGpk would see in the retail file.
+      vectors.archives.forEach(function (sample) {
+        var raw = DE.fromBase64(sample.indexBase64);
+        var region = 0;
+        sample.entries.forEach(function (entry) { region = Math.max(region, entry.offset + entry.size); });
+
+        var buffer = new ArrayBuffer(region + raw.length + 32);
+        var view = new Uint8Array(buffer);
+        view.set(raw, region);
+        for (var i = 0; i < 12; i++) view[region + raw.length + i] = 'STKFile0PIDX'.charCodeAt(i);
+        view[region + raw.length + 12] = raw.length & 0xFF;
+        view[region + raw.length + 13] = (raw.length >>> 8) & 0xFF;
+        view[region + raw.length + 14] = (raw.length >>> 16) & 0xFF;
+        view[region + raw.length + 15] = (raw.length >>> 24) & 0xFF;
+        for (var j = 0; j < 16; j++) view[region + raw.length + 16 + j] = 'STKFile0PACKFILE'.charCodeAt(j);
+
+        var result = engine.addArchive(sample.name, buffer);
+        assert('打开 ' + sample.name, !result.error && result.entries === sample.entryCount,
+          result.error ? result.error : result.entries + ' 条目');
+      });
+
+      // 3. The launcher must be able to locate its theme music in BGM.GPK and every interface
+      //    cue in SysSe.GPK — this is the "has sound" question, answered from real data.
+      //    The fixtures only carry the small archives, so the attempt is recorded either way
+      //    and the cue names are checked against the indexes that *are* present.
+      var menu = engine.findMenuMusic();
+      assert('探测菜单音乐', true, menu ? ('找到 ' + menu.name) : '未找到（样本不含 BGM.GPK）');
+
+      cues = engine.cueMap();
+      var cueNames = ['click', 'cancel', 'select', 'hover'].filter(function (cue) { return !!cues[cue]; });
+      assert('解析界面音效', cueNames.length >= 1, cueNames.length + '/4：' + cueNames.join(','));
+      cueNames.forEach(function (cue) { assert('  音效 ' + cue, true, cues[cue].name); });
+
+      // 4. Decode audio through Web Audio and push it to the mixer. Safari needs a gesture, so
+      //    headless Chromium may keep the context suspended; it is resumed explicitly here.
+      asyncStart();
+      engine.unlock().then(function (unlocked) {
+        assert('解锁 Web Audio', unlocked === true, engine.ctx ? engine.ctx.state : '没有上下文');
+
+        var payload = null;
+        var pack = engine.archives['SYSSE'];
+        if (pack) {
+          for (var i = 0; i < pack.archive.entries.length; i++) {
+            if (/\.ogg$/i.test(pack.archive.entries[i].name)) {
+              payload = { pack: 'SYSSE', entry: pack.archive.entries[i], name: pack.archive.entries[i].name, archive: pack.archive };
+              break;
+            }
+          }
+        }
+        if (payload === null) {
+          assert('解码音频', false, '归档里没有可用的音频条目');
+          return Promise.resolve();
+        }
+
+        return engine.loadAudio(payload, 'autotest:' + payload.name).then(function (buffer) {
+          assert('解码音频 ' + payload.name.split('/').pop(),
+            !!buffer && buffer.length > 0,
+            buffer ? (buffer.duration.toFixed(2) + ' 秒 / ' + buffer.sampleRate + ' Hz / ' + buffer.numberOfChannels + ' 声道') : '无数据');
+          return engine.playCue(payload, 'autotest-play');
+        }).then(function (played) {
+          assert('播放音频到输出', played === true, played ? '已送入 Web Audio' : '未播放');
+          assert('状态栏文案', currentStatus().indexOf('条目') > 0, currentStatus());
+        }).catch(function (error) {
+          // Record what was actually handed to the decoder: a wrong length or a missing
+          // inline header is the difference between "Safari cannot decode" and "we fed it junk".
+          var raw = null;
+          var info = '';
+          try {
+            raw = payload.archive.read(payload.entry);
+            var head = [];
+            for (var k = 0; k < Math.min(8, raw.length); k++) head.push(raw[k].toString(16).padStart(2, '0'));
+            info = '字节 ' + raw.length + ' ｜ 头部 ' + head.join(' ') +
+              ' ｜ size=' + payload.entry.size + ' header=' + payload.entry.header.length +
+              ' unpacked=' + payload.entry.unpackedSize + ' compressed=' + payload.entry.isCompressed();
+          } catch (readError) {
+            info = '读取失败：' + readError.message;
+          }
+          assert('解码音频', false, error.message + ' ｜ ' + info);
+        });
+      }).catch(function (error) {
+        assert('解锁 Web Audio', false, error.message);
+      }).then(asyncDone, asyncDone);
+    };
+    request.send();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})(typeof self !== 'undefined' ? self : this);
+</script>
+</body>
+</html>
